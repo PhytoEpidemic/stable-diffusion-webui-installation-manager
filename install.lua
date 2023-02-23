@@ -132,6 +132,7 @@ if lfs.attributes("GUI_output.txt") then
 		os.execute(DEST_DIR.."\\install.bat")
 	elseif config.GIT_PULL then
 		os.execute(DEST_DIR.."\\update.bat")
+		os.execute(DEST_DIR.."\\update_extensions.bat")
 	end
 	
 	

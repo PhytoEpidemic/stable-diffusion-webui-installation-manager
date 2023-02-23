@@ -68,7 +68,7 @@ $GitPullCheckbox = New-Object System.Windows.Forms.CheckBox
 $GitPullCheckbox.Location = New-Object System.Drawing.Point(180,10)
 $GitPullCheckbox.Text = "Update to latest"
 $GitPullCheckbox.AutoSize = $true
-(MakeToolTip).SetToolTip($GitPullCheckbox,"Perform a git pull before starting to update to the latest code (AUTOMATIC1111/stable-diffusion-webui)")
+(MakeToolTip).SetToolTip($GitPullCheckbox,"Perform a git pull to get the latest code from AUTOMATIC1111/stable-diffusion-webui (extensions will be updated as well)")
 $GitPullCheckbox.Checked = Run-LuaScript "GIT_PULL"
 $form.Controls.Add($GitPullCheckbox)
 
