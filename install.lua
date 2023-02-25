@@ -65,7 +65,36 @@ local function copy_recursive(source_dir, dest_dir)
     return true
 end
 
-
+function string_findlast(str,pat)
+	local sspot,lspot = str:find(pat)
+	local lastsspot, lastlspot = sspot, lspot
+	while sspot do
+		lastsspot, lastlspot = sspot, lspot
+		sspot, lspot = str:find(pat,lastlspot+1)
+	end
+	return lastsspot, lastlspot
+end
+function startswith(st,pat)
+	return st:sub(1,#pat) == pat
+end
+function endswith(st,pat)
+	return st:sub(#st-(#pat-1),#st) == pat
+end
+function folderUP(path,num)	
+	num = num or 1
+	local look = string_findlast(path,[[\]])
+	if look then 
+		local upafolder = path:sub(1,look-1)
+		if num > 1 then
+			return folderUP(upafolder,num-1)
+		else
+			return upafolder
+		end
+		
+	else
+		return ""
+	end
+end
 
 function loadOptions(filename)
     local options = {}
@@ -105,6 +134,16 @@ if lfs.attributes("GUI_output.txt") then
 	-- Change the working directory to the directory containing this script
 	lfs.chdir(script_dir)
 	local config = loadOptions("GUI_output.txt")
+	if lfs.attributes(folderUP(config.installLocation) .. "\\webui\\webui-user.bat") and lfs.attributes(folderUP(config.installLocation) .. "\\system") then
+		config.installLocation = folderUP(config.installLocation)
+	end
+	if lfs.attributes(config.installLocation .. "\\webui-user.bat") then
+		--Detected raw git clone installation
+		lfs.mkdir(config.installLocation.."\\webui")
+		os.rename(config.installLocation,config.installLocation.."\\webui")
+		os.execute([[rmdir /S /Q "]]..config.installLocation.."\\webui\\venv"..[["]])
+	end
+	
 	local SOURCE_DIR = "sdwebui"
 	local DEST_DIR = config.installLocation
 	local MODEL_DIR = DEST_DIR .. "\\webui\\models\\Stable-diffusion"

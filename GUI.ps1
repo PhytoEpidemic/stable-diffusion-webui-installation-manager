@@ -129,7 +129,7 @@ AddItemToTables "wd-v1-3-full" "Waifu Diffusion v1.3 by hakurei" 7.7 "https://hu
 AddItemToTables "protogenX53Photorealism_10" "Protogen x5.3 (Photorealism) Official Release by darkstorm2150" 3.97 "https://civitai.com/models/3816/protogen-x53-photorealism-official-release"
 AddItemToTables "protogenV22Anime_22" "Protogen v2.2 (Anime) Official Release by darkstorm2150" 3.97 "https://civitai.com/models/3627/protogen-v22-anime-official-release"
 AddItemToTables "v2-1_768-nonema-pruned" "stable diffusion v2.1 base model" 5.21 "https://huggingface.co/stabilityai/stable-diffusion-2-1"
-AddItemToTables "ControlNet" "A bunch of controlnet models" 6.1 "https://huggingface.co/webui/ControlNet-modules-safetensors"
+AddItemToTables "ControlNet" "A bunch of controlnet models" 5.5 "https://huggingface.co/webui/ControlNet-modules-safetensors"
 AddItemToTables "instruct-pix2pix" "instruct-pix2pix by timbrooks" 7.7 "https://huggingface.co/timbrooks/instruct-pix2pix"
 
 
