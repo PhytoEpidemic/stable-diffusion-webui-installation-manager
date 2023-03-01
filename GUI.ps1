@@ -265,13 +265,12 @@ $CMDARGS.ScrollBars = "Vertical"
 $CMDARGS.WordWrap = $true
 $CMDARGS.Add_TextChanged({
 $CMDARGS.Text = $CMDARGS.Text -replace "`n", " "
+$CMDARGS.Text = $CMDARGS.Text -replace "  ", " "
 })
 
 $form.Controls.Add($CMDARGS)
 
-if (-Not $CMDARGS.Text) {
-	$CMDARGS.Text = ("")
-}
+
 
 $browseButton = New-Object System.Windows.Forms.Button
 $browseButton.AutoSize = $true
@@ -376,7 +375,10 @@ for ($i = 0; $i -lt $CMDARGlabels.Count; $i++) {
     $checkbox = New-Object System.Windows.Forms.CheckBox
     $checkbox.Text = $CMDARGlabels[$i]
     $checkbox.AutoSize = $true
-    $FoundInArgs, $NewText = Remove-SubstringIfFound -MainString $CMDARGS.Text -Pattern $CMDARGCom[$i]
+    $FoundInArgs = $false
+	if ($CMDARGS.Text -ne "") {
+		$FoundInArgs, $NewText = Remove-SubstringIfFound -MainString $CMDARGS.Text -Pattern $CMDARGCom[$i]
+	}
 	$checkbox.Checked = $FoundInArgs
 	
 	if ($FoundInArgs) {
