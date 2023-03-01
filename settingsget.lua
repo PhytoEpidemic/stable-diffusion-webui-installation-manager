@@ -5,7 +5,8 @@ local settingsFileLocation = SettingsFolder.."\\launchersettings.txt"
 local defaultSettings = {
 	["installLocation"] = SettingsFolder,
 	["COMMANDLINE_ARGS"] = "",
-	["GIT_PULL"] = false
+	["GIT_PULL"] = false,
+	["OpenWindow"] = true,
 }
 local result = false
 local function split_string(input_string)
