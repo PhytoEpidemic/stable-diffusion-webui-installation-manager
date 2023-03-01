@@ -1,6 +1,5 @@
 Add-Type -AssemblyName System.Windows.Forms
 
-
 function Get-GraphicsCardVendor {
     $gpuInfo = Get-CimInstance Win32_VideoController
     $vendorId = $gpuInfo.VideoProcessor | Select-String -Pattern "^\w{3}"
@@ -13,50 +12,45 @@ function Get-GraphicsCardVendor {
     }
 }
 
-
 Function ChooseFolder($Message) {
     $FolderBrowse = New-Object System.Windows.Forms.OpenFileDialog -Property @{ValidateNames = $false;CheckFileExists = $false;RestoreDirectory = $true;FileName = $Message;}
     $null = $FolderBrowse.ShowDialog()
     $FolderName = Split-Path -Path $FolderBrowse.FileName
-    return $FolderName
+    
+	return $FolderName
 }
 
 Function MakeToolTip ()
-{
-	
+{	
 	$toolTip = New-Object System.Windows.Forms.ToolTip
-$toolTip.InitialDelay = 10
-$toolTip.AutoPopDelay = 10000
-# Set the text of the tooltip
+	$toolTip.InitialDelay = 10
+	$toolTip.AutoPopDelay = 10000
 	
-Return $toolTip
+	Return $toolTip
 }
 
 function Get-Settings {
-  [CmdletBinding()]
-  param (
-    [Parameter(Mandatory = $true)]
-    [string] $Argument
-  )
-
-
-  $script = (Get-Location).ToString() + "\settingsget.lua"
-
-  $executable = $(Split-Path $script)+"\SDlocalserver.exe"
-
-  $output = & $executable "$script" "$Argument"
-
-  if ($output -eq "true") {
-    $result = $true
-  }
-  elseif ($output -eq "false") {
-    $result = $false
-  }
-  else {
-    $result = $output
-  }
-
-  return $result
+	[CmdletBinding()]
+	param (
+	[Parameter(Mandatory = $true)]
+	[string] $Argument
+	)
+	
+	$script = (Get-Location).ToString() + "\settingsget.lua"
+	$executable = $(Split-Path $script)+"\SDlocalserver.exe"
+	$output = & $executable "$script" "$Argument"
+	
+	if ($output -eq "true") {
+		$result = $true
+	}
+	elseif ($output -eq "false") {
+		$result = $false
+	}
+	else {
+		$result = $output
+	}
+	
+	return $result
 }
 
 function Remove-NonMatchingCharacter {
@@ -84,11 +78,11 @@ $isLightMode = Get-ItemPropertyValue -Path "HKCU:\SOFTWARE\Microsoft\Windows\Cur
 
 $form = New-Object System.Windows.Forms.Form
 $form.AutoSize = $true
- $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
- $form.MaximizeBox = $false
- $form.Icon = "logo2.ico"
- $form.Text = "SDlocalserver"
- $form.StartPosition = 'CenterScreen'
+$form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
+$form.MaximizeBox = $false
+$form.Icon = "logo2.ico"
+$form.Text = "Stable Diffusion Webui Launcher"
+$form.StartPosition = 'CenterScreen'
 $form.BackColor = if (-Not $isLightMode) {[System.Drawing.Color]::FromArgb(33, 33, 33)} else {[System.Drawing.SystemColors]::Control}
 $form.ForeColor = if (-Not $isLightMode) {[System.Drawing.SystemColors]::Control} else {[System.Drawing.SystemColors]::WindowText}
 
@@ -97,7 +91,6 @@ $OutputPathTextBoxLabel.Location = New-Object System.Drawing.Point(10,10)
 $OutputPathTextBoxLabel.AutoSize = $true
 $OutputPathTextBoxLabel.Text = 'Location:'
 $form.Controls.Add($OutputPathTextBoxLabel)
-
 
 $CMDARGSTextBoxLabel = New-Object System.Windows.Forms.Label
 $CMDARGSTextBoxLabel.Location = New-Object System.Drawing.Point(10,60)
@@ -109,48 +102,39 @@ $linkLabel = New-Object System.Windows.Forms.LinkLabel
 $linkLabel.Location = New-Object System.Drawing.Point(170,60)
 $linkLabel.AutoSize = $true
 $linkLabel.BackColor = [System.Drawing.SystemColors]::Control
-$linkLabel.Text = "wiki/Command-Line-Arguments-and-Settings"
+$linkLabel.Text = " wiki/Command-Line-Arguments-and-Settings"
 $linkLabel.Add_Click({
   Start-Process "https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Command-Line-Arguments-and-Settings"
 })
-
 (MakeToolTip).SetToolTip($linkLabel,"Visit the wiki to see more info about the available command line arguments and settings")
 $form.Controls.Add($linkLabel)
-
 
 $OverwriteModelCheckbox = New-Object System.Windows.Forms.CheckBox
 $OverwriteModelCheckbox.Location = New-Object System.Drawing.Point(10,190)
 $OverwriteModelCheckbox.Text = "Overwrite models"
 $OverwriteModelCheckbox.AutoSize = $true
 (MakeToolTip).SetToolTip($OverwriteModelCheckbox,"Overwrite model files if you try to download the same model again.")
-
 $form.Controls.Add($OverwriteModelCheckbox)
-
-$modelGB = 0
 
 $DownloadModelLabel = New-Object System.Windows.Forms.Label
 $DownloadModelLabel.Location = New-Object System.Drawing.Point(10,215)
 $DownloadModelLabel.AutoSize = $true
-$DownloadModelLabel.Text = 'Models to Download: ' +$modelGB.ToString()+"GB"
+$DownloadModelLabel.Text = 'Models to Download: 0GB'
 (MakeToolTip).SetToolTip($DownloadModelLabel,"Models will be downloaded before the server starts. Right click the model name to see more info about that model.")
 $form.Controls.Add($DownloadModelLabel)
 
-
-# Define the empty arrays
-$labels = @()
+$ModelLabels = @()
 $modelInfo = @()
 $modelSizes = @()
 $modelPages = @()
 
 function AddItemToTables($newLabel, $newModelInfo, $newModelSize, $newModelPage) {
-    $global:labels += $newLabel
+    $global:ModelLabels += $newLabel
     $global:modelInfo += $newModelInfo
     $global:modelSizes += $newModelSize
     $global:modelPages += $newModelPage
 }
 
-
-# Add each item to the arrays
 AddItemToTables "sd-v1-4" "stable diffusion v1.4 base model by CompVis" 4.27 "https://huggingface.co/CompVis/stable-diffusion-v-1-4-original"
 AddItemToTables "v1-5-pruned-emaonly" "stable diffusion v1.5 base model by runwayml" 4.27 "https://huggingface.co/runwayml/stable-diffusion-v1-5"
 AddItemToTables "sd-vae-ft-mse" "An improved autoencoder by stabilityai" 0.3 "https://huggingface.co/stabilityai/sd-vae-ft-mse"
@@ -161,49 +145,41 @@ AddItemToTables "v2-1_768-ema-pruned" "stable diffusion v2.1 base model by stabi
 AddItemToTables "ControlNet" "A bunch of controlnet models" 5.5 "https://huggingface.co/webui/ControlNet-modules-safetensors"
 AddItemToTables "instruct-pix2pix" "instruct-pix2pix by timbrooks" 7.7 "https://huggingface.co/timbrooks/instruct-pix2pix"
 
-
-
-
-
 $gridWidth = 2
-$gridHeight = [Math]::Ceiling($labels.Count / $gridWidth)
+$gridHeight = [Math]::Ceiling($ModelLabels.Count / $gridWidth)
 
-$ModelDownloadCheckBoxes = New-Object System.Windows.Forms.CheckBox[] $labels.Count
+$ModelDownloadCheckBoxes = New-Object System.Windows.Forms.CheckBox[] $ModelLabels.Count
 
 $ModelDownloadCheckBoxGrid = New-Object System.Windows.Forms.TableLayoutPanel
 $ModelDownloadCheckBoxGrid.RowCount = $gridHeight
 $ModelDownloadCheckBoxGrid.ColumnCount = $gridWidth
 $ModelDownloadCheckBoxGrid.AutoSize = $true
-$xCheckboxOffset = 10  # Horizontal offset in pixels
-$yCheckboxOffset = 230  # Vertical offset in pixels
+
 Function changeGB() {
 	$modelGB = 0
-	for ($i = 0; $i -lt $labels.Count; $i++) {
+	
+	for ($i = 0; $i -lt $ModelLabels.Count; $i++) {
 		if ($ModelDownloadCheckBoxes[$i].Checked) {
 			$modelGB += $modelSizes[$i]
 		}
 	}
 	
 	$DownloadModelLabel.Text = 'Models to Download: ' +$modelGB.ToString()+"GB"
-	
 }
 
-for ($i = 0; $i -lt $labels.Count; $i++) {
+for ($i = 0; $i -lt $ModelLabels.Count; $i++) {
     $checkbox = New-Object System.Windows.Forms.CheckBox
-    $checkbox.Text = $labels[$i]
+    $checkbox.Text = $ModelLabels[$i]
     $checkbox.AutoSize = $true
 	(MakeToolTip).SetToolTip($checkbox,$modelInfo[$i])
 	$checkbox.Add_Click({changeGB})
-    $ModelDownloadCheckBoxes[$i] = $checkbox
+    
+	$ModelDownloadCheckBoxes[$i] = $checkbox
     $ModelDownloadCheckBoxGrid.Controls.Add($checkbox, $i % $gridWidth, [Math]::Floor($i / $gridWidth))
 }
 
-$ModelDownloadCheckBoxGrid.Left = $xCheckboxOffset  # Set the left offset of the grid
-$ModelDownloadCheckBoxGrid.Top = $yCheckboxOffset  # Set the top offset of the grid
-
-
-
-
+$ModelDownloadCheckBoxGrid.Left = 10
+$ModelDownloadCheckBoxGrid.Top = 230
 
 $ModelDownloadCheckBoxes[0].Add_MouseDown({if ($_.Button -eq 'Right') {Start-Process $modelPages[0]}})
 $ModelDownloadCheckBoxes[1].Add_MouseDown({if ($_.Button -eq 'Right') {Start-Process $modelPages[1]}})
@@ -215,16 +191,23 @@ $ModelDownloadCheckBoxes[6].Add_MouseDown({if ($_.Button -eq 'Right') {Start-Pro
 $ModelDownloadCheckBoxes[7].Add_MouseDown({if ($_.Button -eq 'Right') {Start-Process $modelPages[7]}})
 $ModelDownloadCheckBoxes[8].Add_MouseDown({if ($_.Button -eq 'Right') {Start-Process $modelPages[8]}})
 
-
-if (-Not (Test-Path "$InstallLocation\webui\models\Stable-diffusion"))  {
+if ((-Not (Test-Path "$InstallLocation\webui\models\Stable-diffusion")) -and (-Not (Test-Path "$InstallLocation\models\Stable-diffusion")))  {
 	$ModelDownloadCheckBoxes[1].Checked = $true
-	
 } else {
-	$ckptFiles = Get-ChildItem -Path "$InstallLocation\webui\models\Stable-diffusion\*.ckpt"
-	$safetensorsFiles = Get-ChildItem -Path "$InstallLocation\webui\models\Stable-diffusion\*.safetensors"
-	if (($safetensorsFiles.Count -eq 0) -and ($ckptFiles.Count -eq 0)) {
-		$ModelDownloadCheckBoxes[1].Checked = $true
+	if (Test-Path "$InstallLocation\webui\models\Stable-diffusion") {
+		$ckptFiles = Get-ChildItem -Path "$InstallLocation\webui\models\Stable-diffusion\*.ckpt"
+		$safetensorsFiles = Get-ChildItem -Path "$InstallLocation\webui\models\Stable-diffusion\*.safetensors"
 		
+		if (($safetensorsFiles.Count -eq 0) -and ($ckptFiles.Count -eq 0)) {
+			$ModelDownloadCheckBoxes[1].Checked = $true
+		}
+	} elseif (Test-Path "$InstallLocation\models\Stable-diffusion") {
+		$ckptFiles = Get-ChildItem -Path "$InstallLocation\models\Stable-diffusion\*.ckpt"
+		$safetensorsFiles = Get-ChildItem -Path "$InstallLocation\models\Stable-diffusion\*.safetensors"
+		
+		if (($safetensorsFiles.Count -eq 0) -and ($ckptFiles.Count -eq 0)) {
+			$ModelDownloadCheckBoxes[1].Checked = $true
+		}
 	}
 }
 
@@ -263,17 +246,7 @@ function SaveOptions {
     $output | Out-File -FilePath $FilePath -Encoding utf8
 }
 
-
-
-
-
 $form.Controls.Add($ModelDownloadCheckBoxGrid)
-
-
-
-
-
-
 
 $textBox = New-Object System.Windows.Forms.TextBox
 $textBox.Size = New-Object System.Drawing.Size(450,20)
@@ -293,8 +266,6 @@ $CMDARGS.WordWrap = $true
 $CMDARGS.Add_TextChanged({
 $CMDARGS.Text = $CMDARGS.Text -replace "`n", " "
 })
-#(MakeToolTip).SetToolTip($CMDARGS,"")
-
 
 $form.Controls.Add($CMDARGS)
 
@@ -302,22 +273,40 @@ if (-Not $CMDARGS.Text) {
 	$CMDARGS.Text = ("")
 }
 
-
-
 $browseButton = New-Object System.Windows.Forms.Button
 $browseButton.AutoSize = $true
 $browseButton.Location = New-Object System.Drawing.Point(100,5)
 $browseButton.Text = "Browse"
 $browseButton.Add_Click({
     $chosen_folder = ChooseFolder -Message "Install Here"
+	
 	if (-Not ($chosen_folder -eq "")){
 		$textBox.Text = $chosen_folder
+		
 		Get-Settings("installLocation="+$textBox.Text)
+		
 		$global:InstallLocation = Get-Settings("installLocation")
 		$CMDARGS.Text = (Get-Settings("COMMANDLINE_ARGS"))
+		
 		if ($CMDARGS.Text -eq "False") {$CMDARGS.Text = ""}
 	}
+	
+	
+	for ($i = 0; $i -lt $CMDARGlabels.Count; $i++) {
+		$checkbox = $CMDARGSCheckBoxes[$i]
+		$FoundInArgs = $false
+		
+		if ($CMDARGS.Text -ne "") {
+			$FoundInArgs, $NewText = Remove-SubstringIfFound -MainString $CMDARGS.Text -Pattern $CMDARGCom[$i]
+		}
+		
+		if ($FoundInArgs) {
+			$CMDARGS.Text = $NewText
+			$checkbox.Checked = $true
+		}
+	}
 })
+
 $form.Controls.Add($browseButton)
 
 $settingsButtonX = 480
@@ -328,19 +317,15 @@ $cpuOnlySettingsButton.AutoSize = $true
 $cpuOnlySettingsButton.Location = New-Object System.Drawing.Point(($settingsButtonX),($settingsButtonY))
 $cpuOnlySettingsButton.Text = "CPU settings"
 $cpuOnlySettingsButton.Add_Click({
-	
 	$CMDARGSCheckBoxes[0].Checked = $false
 	$CMDARGSCheckBoxes[1].Checked = $false
 	$CMDARGSCheckBoxes[2].Checked = $true
 	$CMDARGSCheckBoxes[3].Checked = $true
 	$CMDARGSCheckBoxes[4].Checked = $true
-	
-	
-	
 })
+
 (MakeToolTip).SetToolTip($cpuOnlySettingsButton,"Add recommended settings for running on a CPU: --skip-torch-cuda-test --use-cpu all --precision full --no-half")
 $form.Controls.Add($cpuOnlySettingsButton)
-
 
 $gpuSettingsButton = New-Object System.Windows.Forms.Button
 $gpuSettingsButton.AutoSize = $true
@@ -353,25 +338,20 @@ $gpuSettingsButton.Add_Click({
 	$CMDARGSCheckBoxes[3].Checked = $false
 	$CMDARGSCheckBoxes[4].Checked = $false
 })
+
 (MakeToolTip).SetToolTip($gpuSettingsButton,"Add recommended settings for running on a GPU: --xformers --no-half")
 $form.Controls.Add($gpuSettingsButton)
 
-
-
-
-
-# Define the empty arrays
 $CMDARGlabels = @()
 $CMDARGInfo = @()
 $CMDARGCom = @()
+
 function AddItemToArgTables($newLabel, $newCMDARGInfo, $newCMDARGCom) {
     $global:CMDARGlabels += $newLabel
     $global:CMDARGInfo += $newCMDARGInfo
     $global:CMDARGCom += $newCMDARGCom
 }
 
-
-# Add each item to the arrays
 AddItemToArgTables "Enable xformers" "Enable xformers for cross attention layers, this reduces vram usage and can have great speed increases" "--xformers"
 AddItemToArgTables "Low vram (<8GB)" "Enable stable diffusion model optimizations for sacrificing a little speed for lower vram usage" "--medvram"
 AddItemToArgTables "No Half" "Do not switch the model to 16-bit floats (necessary for training but will slow down generations)" "--no-half"
@@ -383,20 +363,14 @@ AddItemToArgTables "API logging" "Enable logging of all API requests" "--api-log
 AddItemToArgTables "No Webui" "Only launch the API, without the UI" "--nowebui"
 
 $gridWidth = 2
-$gridHeight = [Math]::Ceiling($labels.Count / $gridWidth)
+$gridHeight = [Math]::Ceiling($CMDARGlabels.Count / $gridWidth)
 
-$CMDARGSCheckBoxes = New-Object System.Windows.Forms.CheckBox[] $labels.Count
+$CMDARGSCheckBoxes = New-Object System.Windows.Forms.CheckBox[] $CMDARGlabels.Count
 
 $CMDARGSCheckBoxGrid = New-Object System.Windows.Forms.TableLayoutPanel
 $CMDARGSCheckBoxGrid.RowCount = $gridHeight
 $CMDARGSCheckBoxGrid.ColumnCount = $gridWidth
 $CMDARGSCheckBoxGrid.AutoSize = $true
-$xCheckboxOffset = 460 # Horizontal offset in pixels
-$yCheckboxOffset = 80 # Vertical offset in pixels
-
-
-
-
 
 for ($i = 0; $i -lt $CMDARGlabels.Count; $i++) {
     $checkbox = New-Object System.Windows.Forms.CheckBox
@@ -404,32 +378,37 @@ for ($i = 0; $i -lt $CMDARGlabels.Count; $i++) {
     $checkbox.AutoSize = $true
     $FoundInArgs, $NewText = Remove-SubstringIfFound -MainString $CMDARGS.Text -Pattern $CMDARGCom[$i]
 	$checkbox.Checked = $FoundInArgs
+	
 	if ($FoundInArgs) {
 		$CMDARGS.Text = $NewText
 	}
+	
 	(MakeToolTip).SetToolTip($checkbox,$CMDARGInfo[$i])
     $CMDARGSCheckBoxes[$i] = $checkbox
     $CMDARGSCheckBoxGrid.Controls.Add($checkbox, $i % $gridWidth, [Math]::Floor($i / $gridWidth))
 }
 
-$CMDARGSCheckBoxGrid.Left = $xCheckboxOffset  # Set the left offset of the grid
-$CMDARGSCheckBoxGrid.Top = $yCheckboxOffset  # Set the top offset of the grid
+$CMDARGSCheckBoxGrid.Left = 460
+$CMDARGSCheckBoxGrid.Top = 80
 
 $form.Controls.Add($CMDARGSCheckBoxGrid)
 
-$ButtonX = 420
-$ButtonY = 200
+$ButtonX = 500
+$ButtonY = 180
 
 $startServerButton = New-Object System.Windows.Forms.Button
-$startServerButton.AutoSize = $true
-$startServerButton.Location = New-Object System.Drawing.Point(($ButtonX),($ButtonY+80))
+$startServerButton.Size = New-Object System.Drawing.Size(140,60)
+$startServerButton.Location = New-Object System.Drawing.Point(($ButtonX),($ButtonY+40))
 $startServerButton.Text = "Start Server"
 (MakeToolTip).SetToolTip($startServerButton,"Installation and updates will happen before the server starts. First launch of the server will download and install additional dependencies (~7GB)")
 $startServerButton.Add_Click({
 	
 	for ($i = 0; $i -lt $CMDARGlabels.Count; $i++) {
 		$checkbox = $CMDARGSCheckBoxes[$i]
-		$FoundInArgs, $NewText = Remove-SubstringIfFound -MainString $CMDARGS.Text -Pattern $CMDARGCom[$i]
+		$FoundInArgs = $false
+		if ($CMDARGS.Text -ne "") {
+			$FoundInArgs, $NewText = Remove-SubstringIfFound -MainString $CMDARGS.Text -Pattern $CMDARGCom[$i]
+		}
 		if ($checkbox.Checked -and (-Not $FoundInArgs)) {
 			$CMDARGS.Text = $CMDARGS.Text+" "+$CMDARGCom[$i]
 		}
@@ -438,6 +417,7 @@ $startServerButton.Add_Click({
 	if ((-Not (Get-GraphicsCardVendor -eq "NVIDIA")) -and ($CMDARGS.Text -notlike "*--skip-torch-cuda-test*")) {
         $CMDARGS.Text = $CMDARGS.Text + " --skip-torch-cuda-test"
     }
+	
 	Set-Content -Path "GUI_output.txt" -Value (
 		"installLocation="+$textBox.Text+
 		"`nCOMMANDLINE_ARGS="+$CMDARGS.Text+
@@ -445,11 +425,13 @@ $startServerButton.Add_Click({
 		"`nGIT_PULL=" +$GitPullCheckbox.Checked.ToString()+
 		"`nOpenWindow=" +$OpenWindowCheckbox.Checked.ToString()
 	)
+	
 	SaveOptions -CheckBoxes $ModelDownloadCheckBoxes -FilePath "models_download.txt"
-    #$form.Close()
+    
+	$form.Close()
 })
-$form.Controls.Add($startServerButton)
 
+$form.Controls.Add($startServerButton)
 
 $GitPullCheckbox = New-Object System.Windows.Forms.CheckBox
 $GitPullCheckbox.Location = New-Object System.Drawing.Point(($ButtonX),($ButtonY+110))
@@ -466,10 +448,6 @@ $OpenWindowCheckbox.AutoSize = $true
 (MakeToolTip).SetToolTip($OpenWindowCheckbox,"Open a separate dedicated window for the webui.")
 $OpenWindowCheckbox.Checked = Get-Settings "OpenWindow"
 $form.Controls.Add($OpenWindowCheckbox)
-
-
-
-
 
 $form.Topmost = $true
 $form.ShowDialog()
