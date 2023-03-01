@@ -139,9 +139,14 @@ if lfs.attributes("GUI_output.txt") then
 	end
 	if lfs.attributes(config.installLocation .. "\\webui-user.bat") then
 		--Detected raw git clone installation
-		lfs.mkdir(config.installLocation.."\\webui")
-		os.rename(config.installLocation,config.installLocation.."\\webui")
-		os.execute([[rmdir /S /Q "]]..config.installLocation.."\\webui\\venv"..[["]])
+		print("This installation is using 'venv', would you like to convert it to the new release structure? [y/n]")
+		if io.read() == "y" then
+			lfs.mkdir(config.installLocation.."\\webui")
+			os.rename(config.installLocation,config.installLocation.."\\webui")
+			os.execute([[rmdir /S /Q "]]..config.installLocation.."\\webui\\venv"..[["]])
+		else
+			os.exit()
+		end
 	end
 	
 	local SOURCE_DIR = "sdwebui"
@@ -154,7 +159,7 @@ if lfs.attributes("GUI_output.txt") then
 	-- Extract the files
 	os.execute("7za.exe x stable-diffusion-webui.7z")
 	os.execute("7za.exe x -osdwebui system.7z")
-	
+	lfs.mkdir("dltmp")
 	-- Update the files
 	
 	
@@ -179,6 +184,7 @@ if lfs.attributes("GUI_output.txt") then
 	settings.set("installLocation",config.installLocation)
 	settings.set("COMMANDLINE_ARGS",config.COMMANDLINE_ARGS)
 	settings.set("GIT_PULL",config.GIT_PULL)
+	settings.set("OpenWindow",config.OpenWindow)
 	
 	
 	
@@ -194,29 +200,39 @@ if lfs.attributes("GUI_output.txt") then
 			link = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors",
 			ext = "safetensors"
 		},
-		["wd-v1-3-full"] = {
+		["sd-vae-ft-mse"] = {
+			DIR = DEST_DIR .. "\\webui\\models\\VAE",
+			link = "https://huggingface.co/stabilityai/sd-vae-ft-mse/resolve/main/diffusion_pytorch_model.safetensors",
+			ext = "safetensors"
+		},
+		["sd-v1-5-inpainting"] = {
 			DIR = MODEL_DIR,
-			link = "https://huggingface.co/hakurei/waifu-diffusion-v1-3/resolve/main/wd-v1-3-full.ckpt",
+			link = "https://huggingface.co/runwayml/stable-diffusion-inpainting/resolve/main/sd-v1-5-inpainting.ckpt",
 			ext = "ckpt"
 		},
-		["protogenX53Photorealism_10"] = {
+		["512-inpainting-ema"] = {
 			DIR = MODEL_DIR,
-			link = "https://civitai.com/api/download/models/4229?type=Model&format=PickleTensor",
-			ext = "ckpt"
-		},
-		["protogenV22Anime_22"] = {
-			DIR = MODEL_DIR,
-			link = "https://civitai.com/api/download/models/4007?type=Model&format=PickleTensor",
-			ext = "ckpt"
+			link = "https://huggingface.co/stabilityai/stable-diffusion-2-inpainting/resolve/main/512-inpainting-ema.safetensors",
+			ext = "safetensors"
 			
 		},
 		["v2-1_768-nonema-pruned"] = {
 			DIR = MODEL_DIR,
-			link = "https://huggingface.co/stabilityai/stable-diffusion-2-1/resolve/main/v2-1_768-nonema-pruned.ckpt",
-			ext = "ckpt",
+			link = "https://huggingface.co/stabilityai/stable-diffusion-2-1/resolve/main/v2-1_768-nonema-pruned.safetensors",
+			ext = "safetensors",
 			extra_downloads = {
 				MODEL_DIR,
 				"v2-1_768-nonema-pruned.yaml",
+				"https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference-v.yaml",
+			}
+		},
+		["v2-1_768-ema-pruned"] = {
+			DIR = MODEL_DIR,
+			link = "https://huggingface.co/stabilityai/stable-diffusion-2-1/resolve/main/v2-1_768-ema-pruned.safetensors",
+			ext = "safetensors",
+			extra_downloads = {
+				MODEL_DIR,
+				"v2-1_768-ema-pruned.yaml",
 				"https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference-v.yaml",
 			}
 		},
@@ -260,7 +276,13 @@ if lfs.attributes("GUI_output.txt") then
 	}
 	
 	
-	
+
+	local function downloadFile(file_name, download_link, download_dir)
+		print("Downloading: " .. file_name)
+		lfs.chdir(script_dir .. "\\dltmp")
+		os.execute([[curl -L -o "]] .. file_name .. [[" "]] .. download_link .. [["]])
+		os.execute([[move /Y "]] .. file_name .. [[" "]] .. download_dir .. "\\" .. file_name .. [["]])
+	end
 	
 	for model,download in pairs(loadOptions("models_download.txt")) do
 		if download then
@@ -281,13 +303,12 @@ if lfs.attributes("GUI_output.txt") then
 					end
 				end
 				if info.link then
-					os.execute("curl -L -o \"" .. info.DIR .. "\\"..model.."."..(info.ext).."\" \"" .. (info.link) .. "\"")
+					downloadFile(model.."."..(info.ext),info.link,info.DIR)
 					if info.extra_downloads then
 						for i=1, #info.extra_downloads, 3 do
 							local existing_file = lfs.attributes(info.extra_downloads[i] .. "\\"..info.extra_downloads[i+1])
 							if (not existing_file) or (existing_file and existing_file.size < 1024*10) or config.OverwriteModels then
-								print("Downloading: "..info.extra_downloads[i+1])
-								os.execute("curl -L -o \"" .. info.extra_downloads[i] .. "\\"..info.extra_downloads[i+1].."\" \"" .. (info.extra_downloads[i+2]) .. "\"")
+								downloadFile(info.extra_downloads[i+1],info.extra_downloads[i+2],info.extra_downloads[i])
 							end
 						end
 					end
@@ -296,8 +317,7 @@ if lfs.attributes("GUI_output.txt") then
 						for i=1, #info.extra_downloads, 2 do
 							local existing_file = lfs.attributes(info.DIR .. "\\"..info.extra_downloads[i])
 							if (not existing_file) or (existing_file and existing_file.size < 1024*10) or config.OverwriteModels then
-								print("Downloading: "..info.extra_downloads[i])
-								os.execute("curl -L -o \"" .. info.DIR .. "\\"..info.extra_downloads[i].."\" \"" .. (info.extra_downloads[i+1]) .. "\"")
+								downloadFile(info.extra_downloads[i],info.extra_downloads[i+1],info.DIR)
 							end
 							
 						end
@@ -310,6 +330,9 @@ if lfs.attributes("GUI_output.txt") then
 		end
 	end
 	lfs.chdir(script_dir)
+	if config.OpenWindow then
+		io.popen([["C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --app=http://127.0.0.1:7860 2>&1]])
+	end
 	io.open("instcomp","w"):close()
 end
 
