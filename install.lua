@@ -173,7 +173,7 @@ end
 
 local settings = require("settingsget")
 
-os.execute("powershell -File GUI.ps1")-- -ExecutionPolicy Bypass
+os.execute("powershell -ExecutionPolicy Bypass -File GUI.ps1")
 cls()
 if not lfs.attributes("GUI_output.txt") then
 	return os.exit()
