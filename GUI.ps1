@@ -416,7 +416,9 @@ $startServerButton.Add_Click({
 		}
 	}
 	
-	if ((-Not (Get-GraphicsCardVendor -eq "NVIDIA")) -and ($CMDARGS.Text -notlike "*--skip-torch-cuda-test*")) {
+	$GraphicsVender = Get-GraphicsCardVendor
+	
+	if (($GraphicsVender -ne "NVIDIA") -and ($CMDARGS.Text -notlike "*--skip-torch-cuda-test*")) {
         $CMDARGS.Text = $CMDARGS.Text + " --skip-torch-cuda-test"
     }
 	
