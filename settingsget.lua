@@ -5,8 +5,8 @@ local settingsFileLocation = SettingsFolder.."\\launchersettings.txt"
 local defaultSettings = {
 	["installLocation"] = SettingsFolder,
 	["COMMANDLINE_ARGS"] = "",
-	["GIT_PULL"] = false,
-	["OpenWindow"] = true,
+	["GIT_PULL"] = true,
+	["OpenWindow"] = false,
 }
 local result = false
 
