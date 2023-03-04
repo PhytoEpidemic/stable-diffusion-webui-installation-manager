@@ -314,7 +314,7 @@ local MODEL_LINKS = {
 	},
 	["ControlNet"] = {
 		DIR = DEST_DIR .. "\\webui\\extensions\\sd-webui-controlnet\\models",
-		pre_install = {[1] = {["start_in"] = DEST_DIR, ["installer"] = script_dir.."\\extra-installers\\ControlNet"}},
+		pre_install = {[1] = {["start_in"] = DEST_DIR, ["installer"] = script_dir.."\\extra-installers\\ControlNet\install.bat"}},
 		extra_downloads = {
 			"cldm_v15.yaml",
 			"https://huggingface.co/webui/ControlNet-modules-safetensors/raw/main/cldm_v15.yaml",
@@ -355,6 +355,7 @@ local function downloadFile(file_name, download_link, download_dir)
 	print("Downloading: " .. file_name)
 	lfs.chdir(script_dir .. "\\dltmp")
 	os.execute([[curl -L -o "]] .. file_name .. [[" "]] .. download_link .. [["]])
+	os.remove(download_dir .. "\\" .. file_name)
 	os.execute([[move /Y "]] .. file_name .. [[" "]] .. download_dir .. "\\" .. file_name .. [["]])
 end
 
@@ -417,7 +418,11 @@ end
 lfs.chdir(script_dir)
 
 if config.OpenWindow then
-	io.popen([["C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --app=http://127.0.0.1:7860 2>&1]])
+	if lfs.attributes("C:\Program Files\Google\Chrome\Application\chrome.exe") then
+		io.popen([["C:\Program Files\Google\Chrome\Application\chrome.exe" --app=http://127.0.0.1:7860 2>&1]])
+	else
+		io.popen([["C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --app=http://127.0.0.1:7860 2>&1]])
+	end
 end
 
 io.open("instcomp","w"):close()
