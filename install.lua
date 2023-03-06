@@ -188,10 +188,13 @@ lfs.chdir(script_dir)
 
 local config = loadOptions("GUI_output.txt")
 
+settings.set("COMMANDLINE_ARGS",config.COMMANDLINE_ARGS)
+settings.set("GIT_PULL",config.GIT_PULL)
+settings.set("OpenWindow",config.OpenWindow)
 if lfs.attributes(folderUP(config.installLocation) .. "\\webui\\webui-user.bat") and lfs.attributes(folderUP(config.installLocation) .. "\\system") then
 	config.installLocation = folderUP(config.installLocation)
 end
-
+settings.set("installLocation",config.installLocation)
 if lfs.attributes(config.installLocation .. "\\webui-user.bat") then
 	--Detected raw git clone installation
 	print("This installation is using 'venv', would you like to convert it to the new release structure? [y/n]")
@@ -214,15 +217,20 @@ if lfs.attributes(config.installLocation .. "\\webui-user.bat") then
 	
 end
 
+
+
+
 local SOURCE_DIR = "sdwebui"
 local DEST_DIR = config.installLocation
 local MODEL_DIR = DEST_DIR .. "\\webui\\models\\Stable-diffusion"
 local VAE_DIR = DEST_DIR .. "\\webui\\models\\VAE"
+local EXTENSIONS_DIR = DEST_DIR .. "\\webui\\extensions"
+local TempDownloadFolder = script_dir.."\\dltemp"
 
 os.execute("vcredist.bat")
 os.execute("7za.exe x stable-diffusion-webui.7z")
 os.execute("7za.exe x -osdwebui system.7z")
-lfs.mkdir("dltmp")
+lfs.mkdir(TempDownloadFolder)
 
 if not oldInstallation then
 	
@@ -239,13 +247,17 @@ if not oldInstallation then
 	
 	lfs.chdir(DEST_DIR)
 	
+	
 	if not lfs.attributes(DEST_DIR.."\\webui") then
 		os.execute(DEST_DIR.."\\install.bat")
 	elseif config.GIT_PULL then
 		os.execute(DEST_DIR.."\\update.bat")
+		lfs.chdir(script_dir)
+		settings.set("COMMANDLINE_ARGS",config.COMMANDLINE_ARGS)
+		lfs.chdir(DEST_DIR)
 		os.execute(DEST_DIR.."\\update_extensions.bat")
 	end
-	
+	os.remove(DEST_DIR.."\\install.bat")
 else
 	
 	if config.GIT_PULL then
@@ -254,13 +266,10 @@ else
 	
 	MODEL_DIR = DEST_DIR .. "\\models\\Stable-diffusion"
 	VAE_DIR = DEST_DIR .. "\\models\\VAE"
+	EXTENSIONS_DIR = DEST_DIR .. "\\extensions"
 end
 
 lfs.chdir(script_dir)
-settings.set("installLocation",config.installLocation)
-settings.set("COMMANDLINE_ARGS",config.COMMANDLINE_ARGS)
-settings.set("GIT_PULL",config.GIT_PULL)
-settings.set("OpenWindow",config.OpenWindow)
 
 
 
@@ -314,7 +323,9 @@ local MODEL_LINKS = {
 	},
 	["ControlNet"] = {
 		DIR = DEST_DIR .. "\\webui\\extensions\\sd-webui-controlnet\\models",
-		pre_install = {[1] = {["start_in"] = DEST_DIR, ["installer"] = script_dir.."\\extra-installers\\ControlNet\install.bat"}},
+		pre_install = {
+			[1] = {["start_in"] = TempDownloadFolder, ["installer"] = script_dir.."\\extra-installers\\ControlNet\\install.bat", ["dest"] = EXTENSIONS_DIR.."\\sd-webui-controlnet"}
+		},
 		extra_downloads = {
 			"cldm_v15.yaml",
 			"https://huggingface.co/webui/ControlNet-modules-safetensors/raw/main/cldm_v15.yaml",
@@ -353,7 +364,7 @@ local MODEL_LINKS = {
 
 local function downloadFile(file_name, download_link, download_dir)
 	print("Downloading: " .. file_name)
-	lfs.chdir(script_dir .. "\\dltmp")
+	lfs.chdir(TempDownloadFolder)
 	os.execute([[curl -L -o "]] .. file_name .. [[" "]] .. download_link .. [["]])
 	os.remove(download_dir .. "\\" .. file_name)
 	os.execute([[move /Y "]] .. file_name .. [[" "]] .. download_dir .. "\\" .. file_name .. [["]])
@@ -374,7 +385,7 @@ for model,download in pairs(loadOptions("models_download.txt")) do
 			if info.pre_install then
 				for _,prereq in ipairs(info.pre_install) do
 					lfs.chdir(prereq.start_in)
-					os.execute(prereq.installer)
+					os.execute(prereq.installer..[[ "]]..prereq.dest..[["]])
 				end
 				
 			end
@@ -417,13 +428,6 @@ end
 
 lfs.chdir(script_dir)
 
-if config.OpenWindow then
-	if lfs.attributes("C:\Program Files\Google\Chrome\Application\chrome.exe") then
-		io.popen([["C:\Program Files\Google\Chrome\Application\chrome.exe" --app=http://127.0.0.1:7860 2>&1]])
-	else
-		io.popen([["C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --app=http://127.0.0.1:7860 2>&1]])
-	end
-end
 
 io.open("instcomp","w"):close()
 
