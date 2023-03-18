@@ -48,18 +48,15 @@ function Get-TargetPath {
 $ModelFoldersToRemove = @()
 $ReopenModelFolderList = $false
 
-function Create-FileListGUI {
+function ModelDirListGUI {
 	param (
 		[string[]]$FileNames,
 		[string]$FolderPath
 	)
 	$global:ReopenModelFolderList = $false
 	$global:ModelFoldersToRemove = @()
-	# Create a new form
 	$form = New-Object System.Windows.Forms.Form
 	$form.Text = "Extra Model Folders"
-	#$form.Width = 400
-	#$form.Height = 400
 	$form.StartPosition = "CenterScreen"
 	$form.Topmost = $true
 	SetColors($form)
@@ -69,14 +66,13 @@ function Create-FileListGUI {
 	
 	$form.Icon = "logo2.ico"
 	$form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
-	# Create a flow layout panel to hold the text boxes
+	
 	$flowLayoutPanel = New-Object System.Windows.Forms.FlowLayoutPanel
 	$flowLayoutPanel.Dock = [System.Windows.Forms.DockStyle]::Fill
 	$flowLayoutPanel.FlowDirection = [System.Windows.Forms.FlowDirection]::TopDown
 	$flowLayoutPanel.AutoSize = $true
 	$form.Controls.Add($flowLayoutPanel)
 
-	# Loop through the file names and create a text box and delete button for each file
 	$textBoxes = New-Object System.Collections.Generic.List[System.Windows.Forms.TextBox]
 	$deleteButtons = New-Object System.Collections.Generic.List[System.Windows.Forms.Button]
 
@@ -108,8 +104,8 @@ function Create-FileListGUI {
 			$fullPath = Join-Path $FolderPath $FileNames[$index]
 			$global:ModelFoldersToRemove += $fullPath
 			$textBoxes[$index].ReadOnly = $true
-			$textBoxes[$index].ForeColor = [System.Drawing.Color]::FromArgb(169, 169, 169) # This sets the color to a dark grey
-			$textBoxes[$index].BackColor = [System.Drawing.Color]::FromArgb(240, 240, 240) # This sets the color to a light grey
+			$textBoxes[$index].ForeColor = [System.Drawing.Color]::FromArgb(169, 169, 169)
+			$textBoxes[$index].BackColor = [System.Drawing.Color]::FromArgb(240, 240, 240)
 			$deleteButtons[$index].Enabled = $false
 		})
 		$flowLayoutPanel.Controls.Add($deleteButton)
@@ -124,10 +120,6 @@ function Create-FileListGUI {
 			Remove-SymbolicLink -LinkName $global:ModelFoldersToRemove[$j]
 		}
 	}
-	
-	# Create the OK button
-	
-	
 	
 	function RenameModelFolders(){
 		$i = 0
@@ -145,7 +137,6 @@ function Create-FileListGUI {
 				if ((Test-Path $oldFullPath) -and ($oldFullPath -ne $newFullPath) -and (-Not (Test-Path $newFullPath))) {
 					Rename-Item $oldFullPath $newFullPath
 				}
-				#Write-Host $oldFullPath $newFullPath
 				$FileNames[$i] = $newFileName
 			}
 			$i++
@@ -168,7 +159,7 @@ function Create-FileListGUI {
 	$AddButton.Location = New-Object System.Drawing.Point(300,370)
 	(MakeToolTip).SetToolTip($AddButton, "Add a folder.")
 	$AddButton.Add_Click({
-		$ModelDir, $LinkLabel = Show-InputBox
+		$ModelDir, $LinkLabel = AddModelFolderInputBox
 		if ($LinkLabel -eq "") {$LinkLabel = "extra"}
 		if ($ModelDir -and (Test-Path $ModelDir)) {
 			$Linkpath = Join-Path -Path $FolderPath -ChildPath "\Stable-diffusion.$LinkLabel"
@@ -190,11 +181,10 @@ function Create-FileListGUI {
 		}
 		
 	})
-	# Add the OK button to the form
+	
 	$flowLayoutPanel.Controls.Add($AddButton)
 	$flowLayoutPanel.Controls.Add($okButton)
 	
-	# Show the form
 	[void]$form.ShowDialog()
 	return $global:ReopenModelFolderList
 }
@@ -260,7 +250,7 @@ function New-SymbolicLink {
     }
 }
 
-function Show-InputBox {
+function AddModelFolderInputBox {
 	[System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
 	
 	$form = New-Object System.Windows.Forms.Form
@@ -412,43 +402,39 @@ $form.Icon = "logo2.ico"
 $form.Text = "Stable Diffusion Webui Launcher"
 $form.StartPosition = 'CenterScreen'
 SetColors($form)
-
+$GUILayout = New-Object System.Windows.Forms.FlowLayoutPanel
+$GUILayout.Location = New-Object System.Drawing.Point(5,30)
+	$GUILayout.Dock = [System.Windows.Forms.DockStyle]::None
+	$GUILayout.FlowDirection = [System.Windows.Forms.FlowDirection]::TopDown
+	$GUILayout.AutoSize = $true
 $OutputPathTextBoxLabel = New-Object System.Windows.Forms.Label
-$OutputPathTextBoxLabel.Location = New-Object System.Drawing.Point(10,10)
 $OutputPathTextBoxLabel.AutoSize = $true
 $OutputPathTextBoxLabel.Text = 'Location:'
-$form.Controls.Add($OutputPathTextBoxLabel)
+
 
 $CMDARGSTextBoxLabel = New-Object System.Windows.Forms.Label
-$CMDARGSTextBoxLabel.Location = New-Object System.Drawing.Point(10,60)
 $CMDARGSTextBoxLabel.AutoSize = $true
 $CMDARGSTextBoxLabel.Text = 'Set command line arguments:'
-$form.Controls.Add($CMDARGSTextBoxLabel)
 
 $linkLabel = New-Object System.Windows.Forms.LinkLabel
-$linkLabel.Location = New-Object System.Drawing.Point(170,60)
 $linkLabel.AutoSize = $true
+$linkLabel.Dock = [System.Windows.Forms.DockStyle]::Right
 $linkLabel.BackColor = [System.Drawing.SystemColors]::Control
 $linkLabel.Text = " wiki/Command-Line-Arguments-and-Settings"
 $linkLabel.Add_Click({
   Start-Process "https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Command-Line-Arguments-and-Settings"
 })
 (MakeToolTip).SetToolTip($linkLabel,"Visit the wiki to see more info about the available command line arguments and settings")
-$form.Controls.Add($linkLabel)
 
 $OverwriteModelCheckbox = New-Object System.Windows.Forms.CheckBox
-$OverwriteModelCheckbox.Location = New-Object System.Drawing.Point(10,190)
 $OverwriteModelCheckbox.Text = "Overwrite models"
 $OverwriteModelCheckbox.AutoSize = $true
 (MakeToolTip).SetToolTip($OverwriteModelCheckbox,"Overwrite model files if you try to download the same model again.")
-$form.Controls.Add($OverwriteModelCheckbox)
 
 $DownloadModelLabel = New-Object System.Windows.Forms.Label
-$DownloadModelLabel.Location = New-Object System.Drawing.Point(10,215)
 $DownloadModelLabel.AutoSize = $true
 $DownloadModelLabel.Text = 'Models to Download: 0GB'
 (MakeToolTip).SetToolTip($DownloadModelLabel,"Models will be downloaded before the server starts. Right click the model name to see more info about that model.")
-$form.Controls.Add($DownloadModelLabel)
 
 $ModelLabels = @()
 $modelInfo = @()
@@ -573,11 +559,9 @@ function SaveOptions {
     $output | Out-File -FilePath $FilePath -Encoding utf8
 }
 
-$form.Controls.Add($ModelDownloadCheckBoxGrid)
 
 $InstallDirTextBox = New-Object System.Windows.Forms.TextBox
 $InstallDirTextBox.Size = New-Object System.Drawing.Size(450,20)
-$InstallDirTextBox.Location = New-Object System.Drawing.Point(10,30)
 $InstallDirTextBox.AllowDrop = $true
 $InstallDirTextBox.Text = $InstallLocation
 $InstallDirTextBox.Add_DragEnter({
@@ -599,12 +583,10 @@ $InstallDirTextBox.Add_DragDrop({
 	
 })
 (MakeToolTip).SetToolTip($InstallDirTextBox,"If you don't have the webui installed it will be automatically installed in this folder.")
-$form.Controls.Add($InstallDirTextBox)
 
 
 $CMDARGS = New-Object System.Windows.Forms.TextBox
 $CMDARGS.Size = New-Object System.Drawing.Size(450,80)
-$CMDARGS.Location = New-Object System.Drawing.Point(10,80)
 $CMDARGS.Text = (Get-Settings("COMMANDLINE_ARGS"))
 if ($CMDARGS.Text -eq "False") {$CMDARGS.Text = ""}
 $CMDARGS.Multiline = $true
@@ -615,7 +597,6 @@ $CMDARGS.Text = $CMDARGS.Text -replace "`n", " "
 $CMDARGS.Text = $CMDARGS.Text -replace "  ", " "
 })
 
-$form.Controls.Add($CMDARGS)
 
 
 function setInstallLocation($chosen_folder){
@@ -644,6 +625,8 @@ function setInstallLocation($chosen_folder){
 			$checkbox.Checked = $true
 		}
 	}
+	CleanInstallAvalible
+	ModelDirsAvalible
 }
 
 
@@ -659,6 +642,76 @@ $browseButton.Add_Click({
 })
 
 $form.Controls.Add($browseButton)
+
+$CleanInstallOptionLayout = New-Object System.Windows.Forms.FlowLayoutPanel
+$CleanInstallOptionLayout.Location = New-Object System.Drawing.Point(200,5)
+	$CleanInstallOptionLayout.Dock = [System.Windows.Forms.DockStyle]::None
+	$CleanInstallOptionLayout.FlowDirection = [System.Windows.Forms.FlowDirection]::LeftToRight
+	$CleanInstallOptionLayout.AutoSize = $true
+	
+$CleanInstallCheckbox = New-Object System.Windows.Forms.CheckBox
+$CleanInstallCheckbox.Location = New-Object System.Drawing.Point(200,5)
+$CleanInstallCheckbox.Text = "Clean Install"
+$CleanInstallCheckbox.AutoSize = $true
+$CleanInstallCheckbox.Add_Click({
+	if ($CleanInstallCheckbox.Checked) {
+		$CleanInstallOptionLayout.Controls.Add($KeepModelsCheckbox)
+		$CleanInstallOptionLayout.Controls.Add($KeepOutputsCheckbox)
+		$CleanInstallOptionLayout.Controls.Add($KeepExtensionsCheckbox)
+		$CleanInstallOptionLayout.Controls.Add($KeepSettingsCheckbox)
+		$CleanInstallOptionLayout.Controls.Add($KeepScriptsCheckbox)
+		
+	} else {
+		$CleanInstallOptionLayout.Controls.Remove($KeepModelsCheckbox)
+		$CleanInstallOptionLayout.Controls.Remove($KeepOutputsCheckbox)
+		$CleanInstallOptionLayout.Controls.Remove($KeepExtensionsCheckbox)
+		$CleanInstallOptionLayout.Controls.Remove($KeepSettingsCheckbox)
+		$CleanInstallOptionLayout.Controls.Remove($KeepScriptsCheckbox)
+	}
+	
+})
+(MakeToolTip).SetToolTip($CleanInstallCheckbox,"Perform a clean install by removing all dependencies and reinstalling them (localizations and textual_inversion_templates will be kept)")
+$CleanInstallCheckbox.Checked = $false
+
+
+
+
+$KeepModelsCheckbox = New-Object System.Windows.Forms.CheckBox
+$KeepModelsCheckbox.Location = New-Object System.Drawing.Point(290,5)
+$KeepModelsCheckbox.Text = "Keep Model Folder"
+$KeepModelsCheckbox.AutoSize = $true
+$KeepModelsCheckbox.Checked = $true
+(MakeToolTip).SetToolTip($KeepModelsCheckbox,"Keep folders with any models intact so you don't lose any of your models (models, embeddings, textual_inversion, textual_inversion_templates).")
+
+$KeepOutputsCheckbox = New-Object System.Windows.Forms.CheckBox
+$KeepOutputsCheckbox.Location = New-Object System.Drawing.Point(410,5)
+$KeepOutputsCheckbox.Text = "Keep Outputs Folder"
+$KeepOutputsCheckbox.AutoSize = $true
+$KeepOutputsCheckbox.Checked = $true
+(MakeToolTip).SetToolTip($KeepOutputsCheckbox,"Keep the outputs folder so you don't lose images you have generated.")
+
+$KeepExtensionsCheckbox = New-Object System.Windows.Forms.CheckBox
+$KeepExtensionsCheckbox.Location = New-Object System.Drawing.Point(410,5)
+$KeepExtensionsCheckbox.Text = "Keep Extensions"
+$KeepExtensionsCheckbox.AutoSize = $true
+$KeepExtensionsCheckbox.Checked = $true
+(MakeToolTip).SetToolTip($KeepExtensionsCheckbox,"Keep any extensions you have installed.")
+
+$KeepSettingsCheckbox = New-Object System.Windows.Forms.CheckBox
+$KeepSettingsCheckbox.Location = New-Object System.Drawing.Point(410,5)
+$KeepSettingsCheckbox.Text = "Keep Settings"
+$KeepSettingsCheckbox.AutoSize = $true
+$KeepSettingsCheckbox.Checked = $true
+(MakeToolTip).SetToolTip($KeepSettingsCheckbox,"Keep all of your settings.")
+
+$KeepScriptsCheckbox = New-Object System.Windows.Forms.CheckBox
+$KeepScriptsCheckbox.Location = New-Object System.Drawing.Point(410,5)
+$KeepScriptsCheckbox.Text = "Keep Scripts"
+$KeepScriptsCheckbox.AutoSize = $true
+$KeepScriptsCheckbox.Checked = $true
+(MakeToolTip).SetToolTip($KeepScriptsCheckbox,"Keep any custom scripts.")
+
+
 
 $settingsButtonX = 480
 $settingsButtonY = 55
@@ -789,21 +842,17 @@ $startServerButton.Add_Click({
 		"`nCOMMANDLINE_ARGS="+$CMDARGS.Text+
 		"`nOverwriteModels=" +$OverwriteModelCheckbox.Checked.ToString()+
 		"`nGIT_PULL=" +$GitPullCheckbox.Checked.ToString()+
-		"`nOpenWindow=" +$OpenWindowCheckbox.Checked.ToString()
+		"`nOpenWindow=" +$OpenWindowCheckbox.Checked.ToString()+
+		"`nCLEAN_INSTALL=" +$CleanInstallCheckbox.Checked.ToString()+
+		"`nKEEP_MODELS=" +$KeepModelsCheckbox.Checked.ToString()+
+		"`nKEEP_OUTPUTS=" +$KeepOutputsCheckbox.Checked.ToString()+
+		"`nKEEP_EXTENSIONS=" +$KeepExtensionsCheckbox.Checked.ToString()+
+		"`nKEEP_SETTINGS=" +$KeepSettingsCheckbox.Checked.ToString()+
+		"`nKEEP_SCRIPTS=" +$KeepScriptsCheckbox.Checked.ToString()
 	)
 	
 	if ($OpenWindowCheckbox.Checked) {
-		$chromepath1 = "C:\Program Files\Google\Chrome\Application\chrome.exe"
-		$chromepath2 = "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-		$edgepath1 = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-		$Wundowurl = "http://127.0.0.1:7860"
-		if (Test-Path $chromepath1) {
-			Start-Process -FilePath $chromepath1 -ArgumentList "--app=$Wundowurl"
-		} elseif (Test-Path $chromepath2) {
-			Start-Process -FilePath $chromepath2 -ArgumentList "--app=$Wundowurl"
-		} else {
-			Start-Process -FilePath $edgepath1 -ArgumentList "--app=$Wundowurl"
-		}
+		open_browser_window -browserName $DropDownBox.SelectedItem
 	}
 	
 	SaveOptions -CheckBoxes $ModelDownloadCheckBoxes -FilePath "models_download.txt"
@@ -815,26 +864,43 @@ $form.Controls.Add($startServerButton)
 
 $AddModelDirButton = New-Object System.Windows.Forms.Button
 $AddModelDirButton.AutoSize = $true
-$AddModelDirButton.Location = New-Object System.Drawing.Point(10,380)
 $AddModelDirButton.Text = "Extra Model Folders"
-(MakeToolTip).SetToolTip($AddModelDirButton,"Add any folders of models you have that you want to show up in the webui.")
+(MakeToolTip).SetToolTip($AddModelDirButton,"Add any folders of models you have that you want to show up in the webui. (Available after first installation)")
 $AddModelDirButton.Add_Click({
 	$Reopen = $true
 	while ($Reopen) {
 		if (Test-Path "$InstallLocation\webui\models\Stable-diffusion") {
 			$matchingFiles = Get-FilesByPattern -FolderPath "$InstallLocation\webui\models" -Pattern "Stable-diffusion."
-			$Reopen = Create-FileListGUI -FileNames $matchingFiles -FolderPath "$InstallLocation\webui\models"
+			$Reopen = ModelDirListGUI -FileNames $matchingFiles -FolderPath "$InstallLocation\webui\models"
 		
 		} elseif (Test-Path "$InstallLocation\models\Stable-diffusion") {
 			$matchingFiles = Get-FilesByPattern -FolderPath "$InstallLocation\models" -Pattern "Stable-diffusion."
-			$Reopen = Create-FileListGUI -FileNames $matchingFiles -FolderPath "$InstallLocation\models"
+			$Reopen = ModelDirListGUI -FileNames $matchingFiles -FolderPath "$InstallLocation\models"
 		}
 	}
 })
 
 
-$form.Controls.Add($AddModelDirButton)
 
+function ModelDirsAvalible() {
+	if ((Test-Path "$InstallLocation\webui\models\Stable-diffusion") -or (Test-Path "$InstallLocation\models\Stable-diffusion")) {
+		$AddModelDirButton.Enabled = $true
+	} else {
+		$AddModelDirButton.Enabled = $false
+	}
+}
+
+
+function CleanInstallAvalible() {
+	if (Test-Path "$InstallLocation\system") {
+		$CleanInstallOptionLayout.Controls.Add($CleanInstallCheckbox)
+	} else {
+		$CleanInstallOptionLayout.Controls.Remove($CleanInstallCheckbox)
+	}
+}
+
+CleanInstallAvalible
+ModelDirsAvalible
 $GitPullCheckbox = New-Object System.Windows.Forms.CheckBox
 $GitPullCheckbox.Location = New-Object System.Drawing.Point(($ButtonX),($ButtonY+110))
 $GitPullCheckbox.Text = "Update to latest"
@@ -850,6 +916,83 @@ $OpenWindowCheckbox.AutoSize = $true
 (MakeToolTip).SetToolTip($OpenWindowCheckbox,"Open a separate dedicated window for the webui.")
 $OpenWindowCheckbox.Checked = Get-Settings "OpenWindow"
 $form.Controls.Add($OpenWindowCheckbox)
+$GUILayout.Controls.Add($OutputPathTextBoxLabel)
+$GUILayout.Controls.Add($InstallDirTextBox)
+$GUILayout.Controls.Add($CMDARGSTextBoxLabel)
 
+$GUILayout.Controls.Add($CMDARGS)
+$GUILayout.Controls.Add($linkLabel)
+$GUILayout.Controls.Add($OverwriteModelCheckbox)
+$GUILayout.Controls.Add($DownloadModelLabel)
+$GUILayout.Controls.Add($ModelDownloadCheckBoxGrid)
+
+
+
+
+$DropDownBox = New-Object System.Windows.Forms.ComboBox
+$DropDownBox.Location = New-Object System.Drawing.Point(($ButtonX),($ButtonY+160))
+$DropDownBox.Size = New-Object System.Drawing.Size(150, 20)
+$DropDownBox.add_SelectedValueChanged({
+	Get-Settings ("BrowserApp="+$DropDownBox.SelectedItem.ToString())
+})
+$DropDownBox.Add_MouseWheel({
+    [System.Windows.Forms.HandledMouseEventArgs]$e = $_
+    $e.Handled = $true
+})
+$selectedBrowser = (Get-Settings "BrowserApp")
+
+$browserPaths = @{
+    "Google Chrome"   = @("C:\Program Files\Google\Chrome\Application\chrome.exe", "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe")
+    "Microsoft Edge"  = @("C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe")
+    "Brave Browser"   = @("C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe")
+}
+
+function open_browser_window {
+    param($browserName)
+
+    $Wundowurl = "http://127.0.0.1:7860"
+
+    foreach ($path in $browserPaths[$browserName]) {
+        if (Test-Path $path) {
+            Start-Process -FilePath $path -ArgumentList "--app=$Wundowurl"
+            break
+        }
+    }
+}
+
+# Example usage
+
+
+foreach ($browserName in $browserPaths.Keys) {
+    foreach ($path in $browserPaths[$browserName]) {
+        if (Test-Path $path) {
+            $item = $DropDownBox.Items.Add($browserName)
+            if ($selectedBrowser -eq $browserName) {
+                $DropDownBox.SelectedIndex = $item
+            }
+            break
+        }
+    }
+}
+
+$OpenWindowCheckbox.Add_Click({
+    if ($OpenWindowCheckbox.Checked) {
+        $form.Controls.Add($DropDownBox)
+    } else {
+        $form.Controls.Remove($DropDownBox)
+    }
+})
+if ($OpenWindowCheckbox.Checked) {
+	$form.Controls.Add($DropDownBox)
+}
+
+
+
+
+
+
+$GUILayout.Controls.Add($AddModelDirButton)
+$form.Controls.Add($GUILayout)
+$form.Controls.Add($CleanInstallOptionLayout)
 $form.Topmost = $true
 $form.ShowDialog()
