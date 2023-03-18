@@ -7,7 +7,28 @@ local defaultSettings = {
 	["COMMANDLINE_ARGS"] = "",
 	["GIT_PULL"] = true,
 	["OpenWindow"] = false,
+	["BrowserApp"] = "Microsoft Edge",
 }
+
+local BrowserOptions = {
+[[C:\Program Files\Google\Chrome\Application\chrome.exe]],
+[[C:\Program Files (x86)\Google\Chrome\Application\chrome.exe]],
+[[C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe]],
+[[C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe]],
+}
+local BrowserNames = {
+"Google Chrome",
+"Google Chrome",
+"Microsoft Edge",
+"Brave Browser",
+}
+
+for i,path in ipairs(BrowserOptions) do
+	if lfs.attributes(path) then
+		defaultSettings["BrowserApp"] = BrowserNames[i]
+		break
+	end
+end
 local result = false
 
 local function split_string(input_string)
