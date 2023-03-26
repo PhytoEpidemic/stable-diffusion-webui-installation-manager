@@ -307,7 +307,14 @@ local function runInstaller()
 	
 	
 	
-	os.execute("powershell -ExecutionPolicy Bypass -File GUI.ps1")
+	os.execute("powershell -ExecutionPolicy Bypass -File mkshortcut.ps1")
+	if lfs.attributes("shortcut.lnk") then
+		os.execute("shortcut.lnk")
+	else
+		os.execute("powershell -ExecutionPolicy Bypass -File GUI.ps1")
+	end
+	
+	
 	cls()
 	if not lfs.attributes("GUI_output.txt") then
 		return os.exit()

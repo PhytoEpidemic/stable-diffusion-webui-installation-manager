@@ -245,6 +245,9 @@ function New-SymbolicLink {
     try {
         Set-Content -Path $batFilePath -Value $batContent -Encoding ASCII
         Start-Process -FilePath $batFilePath -Wait -WindowStyle Hidden
+        if (-Not (Test-Path $linkPath)) {
+			Start-Process -FilePath $batFilePath -Wait -WindowStyle Hidden -Verb RunAs
+		}
     } finally {
         Remove-Item -Path $batFilePath -Force
     }
@@ -262,7 +265,8 @@ function AddModelFolderInputBox {
 	$form.MinimizeBox = $false
 	$form.AutoSize = $true
 	$form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
-	$form.Icon = "logo2.ico"
+	$iconPath = "logo2.ico"
+	$form.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($iconPath)
 	$label = New-Object System.Windows.Forms.Label
 	$label.Location = New-Object System.Drawing.Point(10,30)
 	$label.AutoSize = $true
@@ -629,7 +633,35 @@ function setInstallLocation($chosen_folder){
 	ModelDirsAvalible
 }
 
+function openInExplorer($pathtoopen, $selected) {
+	$openFolderLocation = $pathtoopen
 
+	while (!(Test-Path $openFolderLocation)) {
+		$openFolderLocation = Split-Path $openFolderLocation -Parent
+		if ($openFolderLocation -eq "") {
+			Write-Host "No valid path found. Exiting."
+			exit
+		}
+	}
+	if ($selected) {
+		explorer.exe "/select,`"$openFolderLocation`""
+	} else {
+		explorer.exe "`"$openFolderLocation`""
+	}
+	
+}
+
+
+$openInstallFolderButton = New-Object System.Windows.Forms.PictureBox
+$openInstallFolderButton.Image = [System.Drawing.Image]::FromFile("folder.png")
+$openInstallFolderButton.SizeMode = 'Zoom'
+$openInstallFolderButton.Size = New-Object System.Drawing.Size(16, 16)
+$openInstallFolderButton.Location = New-Object System.Drawing.Point(60, 30)
+$form.Controls.Add($openInstallFolderButton)
+(MakeToolTip).SetToolTip($openInstallFolderButton, "Open in explorer.")
+$openInstallFolderButton.Add_Click({
+	openInExplorer -pathtoopen $InstallLocation -selected $false
+})
 
 $browseButton = New-Object System.Windows.Forms.Button
 $browseButton.AutoSize = $true
@@ -960,7 +992,6 @@ function open_browser_window {
     }
 }
 
-# Example usage
 
 
 foreach ($browserName in $browserPaths.Keys) {
@@ -994,5 +1025,5 @@ if ($OpenWindowCheckbox.Checked) {
 $GUILayout.Controls.Add($AddModelDirButton)
 $form.Controls.Add($GUILayout)
 $form.Controls.Add($CleanInstallOptionLayout)
-$form.Topmost = $true
+$form.Topmost = $false
 $form.ShowDialog()
